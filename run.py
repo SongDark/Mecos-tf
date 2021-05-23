@@ -14,7 +14,7 @@ val_data.steps = 100
 
 writer = tf.summary.create_file_writer("./logs/")
 
-optimizer = tf.keras.optimizers.Adam(0.01)
+optimizer = tf.keras.optimizers.Adam(0.0001)
 
 for epoch in range(10):
 
