@@ -4,8 +4,9 @@ import tensorflow as tf
 from tensorflow.python.keras import initializers, regularizers
 from tensorflow.python.keras.layers import Layer, LSTM, RNN
 from utils import SequenceEncoder, Aggregator
-from lstmcell import TestLSTMCell
-from recurrent import TestRNN
+# from lstmcell import TestLSTMCell
+# from recurrent import TestRNN
+from matcher import CustomLSTMCell, CustomRNN
 
 class Mecos(Layer):
 
@@ -13,13 +14,14 @@ class Mecos(Layer):
                  n_ways, k_shots,
                  vocabulary_size,
                  embedding_size,
+                 matching_steps,
                  embeddings_initializer="glorot_normal",
                  embeddings_regularizer=None,
                  **kwargs):
 
         self.n_ways = n_ways
         self.k_shots = k_shots 
-
+        self.matching_steps = matching_steps
         self.vocabulary_size = vocabulary_size
         self.embedding_size = embedding_size
         self.embeddings_initializer = initializers.get(embeddings_initializer)
@@ -39,8 +41,11 @@ class Mecos(Layer):
 
         self.sequence_encoder = SequenceEncoder(feedforword_layers=2, name="seq_enc")
 
-        cell = TestLSTMCell(input_shape[0][-1])
-        self.lstm = TestRNN(cell=cell, return_state=True)
+        # cell = TestLSTMCell(input_shape[0][-1])
+        # self.lstm = TestRNN(cell=cell, return_state=True)
+        
+        self.lstm_cell = CustomLSTMCell(self.embedding_size * 2)
+        self.lstm_matcher = CustomRNN(cell=self.lstm_cell)
 
         super(Mecos, self).build(input_shape)
 
@@ -50,9 +55,9 @@ class Mecos(Layer):
             support seq: bs x (N x K) x maxlen
             support len: bs x (N x K) x 1
             support labels: bs x (N x K)
-            support seq: bs x N x maxlen
-            support len: bs x N x 1
-            support labels: bs x N
+            query seq: bs x N x maxlen
+            query len: bs x N x 1
+            query labels: bs x N
         outputs
         '''
 
@@ -73,7 +78,14 @@ class Mecos(Layer):
         
         # matching
         # support_embs = lstm_encoder([support_embs, query_embs])
+        query_embs = tf.tile(query_embs, [1, 1, self.matching_steps])
+        query_embs = tf.reshape(query_embs, (-1, self.matching_steps, self.embedding_size * 2))
+        support_embs = tf.reshape(support_embs, (-1, self.embedding_size * 2))
+        query_embs = self.lstm_matcher(query_embs, additional_state=support_embs)
+        query_embs = tf.reshape(query_embs, (-1, self.n_ways, self.embedding_size * 2))
+        support_embs = tf.reshape(support_embs, (-1, self.n_ways, self.embedding_size * 2))
 
+        # cos
         support_embs = tf.tile(support_embs, [1, self.n_ways, 1])
         query_embs = tf.reshape(tf.tile(query_embs, [1, 1, self.n_ways]), (-1, self.n_ways**2, self.embedding_size*2))
 
@@ -112,20 +124,20 @@ class Mecos(Layer):
 # query_labels = tf.keras.layers.Input(shape=(n_ways,), dtype=tf.int32, batch_size=bs)
 
 # # encoder = SequenceEncoder(feedforword_layers=2, name="my")
-# mecos = Mecos(n_ways=n_ways, k_shots=k_shots, vocabulary_size=vocabulary_size, embedding_size=embedding_size)
+# mecos = Mecos(n_ways=n_ways, k_shots=k_shots, matching_steps=2, vocabulary_size=vocabulary_size, embedding_size=embedding_size)
 
 # cos = mecos([support_seqs, support_lens, support_labels, query_seqs, query_lens])
-# # print(cos.shape)
-# # model = tf.keras.Model(inputs=[support_seqs, support_lens, support_labels, query_seqs, query_lens], 
-# #                        outputs=[emb1, emb2])
-# # model.summary() 
+# print(cos.shape)
+# model = tf.keras.Model(inputs=[support_seqs, support_lens, support_labels, query_seqs, query_lens], 
+#                        outputs=[cos])
+# model.summary()
 
 
-# a = tf.constant([[1,1,1],[2,2,2]], tf.int32)
-# b = tf.constant([[3,3,3],[4,4,4]], tf.int32)
+# a = tf.constant([[[1,1,1],[2,2,2]]], tf.int32)
+# b = tf.constant([[[3,3,3],[4,4,4]]], tf.int32)
 
-# a = tf.tile(a, [2,1])
-# b = tf.reshape(tf.tile(b, [1,2]), a.shape)
+# a = tf.tile(a, [1,2,1])
+# b = tf.reshape(tf.tile(b, [1,1,2]), a.shape)
 # print(a)
 # print(b)
 

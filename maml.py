@@ -12,13 +12,15 @@ class MAML:
     def __init__(self,
                  n_ways, k_shots,
                  vocabulary_size,
-                 embedding_size
+                 embedding_size,
+                 matching_steps
                  ):
         
         self.n_ways = n_ways 
         self.k_shots = k_shots
         self.vocabulary_size = vocabulary_size
         self.embedding_size = embedding_size
+        self.matching_steps = matching_steps
 
         self.meta_model = self.build_model()
     
@@ -37,7 +39,7 @@ class MAML:
         query_lens = Input(shape=(self.n_ways,1,), dtype=tf.int32, name="query_lens")
         # query_labels = Input(shape=(), dtype=tf.int32, batch_size=self.n_ways, name="query_labels")
 
-        mecos = Mecos(n_ways=self.n_ways, k_shots=self.k_shots, vocabulary_size=self.vocabulary_size, embedding_size=self.embedding_size)
+        mecos = Mecos(n_ways=self.n_ways, matching_steps=self.matching_steps, k_shots=self.k_shots, vocabulary_size=self.vocabulary_size, embedding_size=self.embedding_size)
         logits = mecos([support_seqs, support_lens, support_labels, query_seqs, query_lens])
 
         model = tf.keras.Model(inputs=[support_seqs, support_lens, support_labels, query_seqs, query_lens],

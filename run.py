@@ -5,7 +5,7 @@ import numpy as np
 from datamanager import RandomSample, Tmall 
 from maml import MAML 
 
-maml = MAML(n_ways=128, k_shots=3, vocabulary_size=1090391, embedding_size=100)
+maml = MAML(n_ways=128, matching_steps=2, k_shots=3, vocabulary_size=1090391, embedding_size=100)
 
 train_data = Tmall("./data/tmall/data_format1/meta_sequence_train.txt", batch_size=1, n_ways=128, k_shots=3, q_query=1)
 val_data = Tmall("./data/tmall/data_format1/meta_sequence_val.txt", batch_size=1, n_ways=128, k_shots=3, q_query=1)
