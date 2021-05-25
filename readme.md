@@ -15,4 +15,4 @@ Random initialized here. No pre-train.
 
 The loss met convergence in a few steps, but the accuracy is quite low. (nearly Zero)
 
-![企业微信截图_16217744868073.png](https://i.loli.net/2021/05/23/SUeOVZvnQ9yporB.png)
+![企业微信截图_16219091472275.png](https://i.loli.net/2021/05/25/lmPXadkxWvbD9wh.png)
