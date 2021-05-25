@@ -10,9 +10,6 @@ The official implementation is not available yet. This version may still contain
 
 Random initialized here. No pre-train.
 
-2. Matching Processor
-
-Not implemented yet.
 
 ## Training
 
